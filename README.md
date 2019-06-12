@@ -1,0 +1,6 @@
+# node
+node是JavaScript语言的服务器运行环境
+所谓运行环境有两层意思：首先，JavaScript语言通过node在服务器上运行，在这个意义上，node有点像JavaScript虚拟机
+其次node提供大量工具库，使得JavaScript语言与操作系互动（读写文件，新建子进程），node在这个意义上是JavaScript的工具库
+# node内部采用goole的v8引擎，作为JavaScript语言解释器，通过自行开发的libuv，调用操作系统资源
+#
