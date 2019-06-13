@@ -136,7 +136,88 @@ try {
   console.log(err);
 }
 上面的代码分别用process.nextTick和setTimeout方法，在下一轮事件循环抛出两个异常，代表异步操作抛出的错误
+解决的方式是将错误代码捕获，放到异步执行
+function async(cb, err) {
+  setTimeout(function() {
+    try {
+    if (true)
+      throw new Error("woops!");
+    else
+      cb("done");
+    } catch (e) {
+      err(e);
+    }
+  }, 2000)
+}
+async(function(res) {
+  console.log("received:", res);
+}, function(err) {
+  console.log("Error: async threw an exception", err);
+})
+上面代码中，async函数异步抛出的错误，同样可以部署在异步的catch代码捕获？
 2.将错误对象传递给回调函数，由回调函数负责发出错误
-
+回调函数的办法普遍，将错误对象作为第一个参数，传入回调函数。这样就避免了捕获代码与发生错误的代码不在同一个时间段
+fs.readFile('/foo.txt', function(err, data) {
+  if (err!==nll) throw err; // throw 终止循环
+  console.log(data);
+})
+读取文件是一个异步操作，它的回调函数有两个参数，第一个是错误对象，第二个是读取到的数据文件。
+如果第一个参数不是null，意味着发生错误，后面的代码也就不在执行。
+function async2(continuation) {
+  setTimeout(function() {
+    try {
+      var res = 42;
+      if (true)
+        throw new Error("woops!");
+      else
+        continuation(null, res);
+    } catch(e) {
+      continuation(e, null);
+    }
+  }, 2000);
+}
+async2(function(err,res){
+  if (err)
+    console.log("error:failed",err);
+  else
+    console.log("received:", res);
+});
+上面的代码中，async2函数的回调函数的第一个参数就是一个错误对象，这是为了处理异步操作抛出的错误？
 3.通过eventemitter接口，发出一个error事件?
+var EventEmitter = require('event').EventEmitter;
+var emitter = new EveentEmitter();
 
+emitter.emit('error', new Error('something bad happend'));
+使用上面的代码必须小心，因为如果没有对error事件部署监听函数，会导致程序崩溃，所以同时需要部署下面的代码：
+emitter.on('error', function(err){
+  console.err('出错'+err.message);
+});
+# 3.4unaughtException事件
+当一个异常未被捕获，就会触发它，可以对这个事件注册回调函数，从而捕获异常
+var logger = require('tracer').console();
+process.on('uncaughtException', function(err) {
+  console.error('Error caught in uncaughtException event:', err);
+});
+try {
+  setTimeout(function(){
+    throw new Error("error");
+  },1);
+} catch (err) {
+console.log(err);
+}?
+只要给uncaughtException配置了回调，node进程不会异常退出，但是异常的的上下文已经丢失，无法给出异常
+发生的详细信息。而且异常可能导致node不能正常进内存回收，出现内存泄漏。
+所以当uncaughtEeception触发后，最好记录错误日志，然后结束node进程
+process.on('uncaughtException', function(err) {
+  logger.log(err);
+  process.exit(1);
+});
+# 3.5 unhandleRejection事件
+iosjs有一个unhandleRejection事件，用来监听没有捕获的Promise对象的rejected状态？
+var promise = new Prmise(function(resolve, reject) {
+  reject(new Error("Broken."));
+});
+
+promise.then(function(result) {
+  console.log(result);
+})
