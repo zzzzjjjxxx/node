@@ -217,7 +217,26 @@ iosjs有一个unhandleRejection事件，用来监听没有捕获的Promise对象
 var promise = new Prmise(function(resolve, reject) {
   reject(new Error("Broken."));
 });
-
 promise.then(function(result) {
   console.log(result);
+})
+上面代码中，promise的状态变成rejected，并且抛出一个错误，但是不会有任何反应，因为没有设置任何处理函数
+只要监听unhandledRejection事件，就能解决这个问题。
+process.on('unhandledRejection', function(err,p) {
+  console.error(err.stack);
+})
+需要注意的是事件监听函数有两个参数，一个是错误对象，第二个是产生错误的promise对象
+var http = require('http');
+http.createServer(function (req, res) {
+  var promise = new Promise(function(resolve, reject) {
+    reject(new Error("Broken"))
+  })
+  promise.info = {url: req.url}
+}).listen(8080)
+
+process.on ('unhandleRejection', function(err,p) {
+  if (p.info && p.info.url) {
+    console.log('error in url', p.info.url)
+  }
+  console.error(err.stack)
 })
