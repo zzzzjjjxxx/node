@@ -121,5 +121,22 @@ modue.exports = out;
 node是单线程运行环境，一旦抛出的异常没有被捕获，会引起整个进程的崩溃。
 node有三个方法，传播一个错误：
 1.使用throw语句抛出一个错误对象，即抛出异常。
+try {
+  process.nextTick(funtion () {
+    throw new Error("error");
+  });
+}catch (err) {
+  console.log(err);
+}
+try {
+  setTimeout(function(){
+    throw new Error("error");
+  },1)
+} catch (err) {
+  console.log(err);
+}
+上面的代码分别用process.nextTick和setTimeout方法，在下一轮事件循环抛出两个异常，代表异步操作抛出的错误
 2.将错误对象传递给回调函数，由回调函数负责发出错误
+
 3.通过eventemitter接口，发出一个error事件?
+
